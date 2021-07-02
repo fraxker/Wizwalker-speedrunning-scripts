@@ -7,6 +7,9 @@ from wizwalker_speed.macro import Macro, SchoolButton, GenderButton
 
 
 async def main():
+    """
+    (Async) Main loop, reads config then sets up listener
+    """
     handler = ClientHandler()
     config = WizConfig()
     school, gender, key, modifiers = config.get_config()
