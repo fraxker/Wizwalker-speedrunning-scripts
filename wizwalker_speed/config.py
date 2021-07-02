@@ -6,7 +6,7 @@ from typing import Tuple
 DEFAULT = {
     "School": "Balance",
     "Gender": "Girl",
-    "Key": Keycode.R.value,
+    "Key": Keycode.R.name,
     "Modifiers": ModifierKeys.CTRL.value,
 }
 
@@ -33,7 +33,7 @@ class WizConfig(object):
         self,
         school: str = None,
         gender: str = None,
-        key: int = None,
+        key: str = None,
         modifiers: int = None,
     ) -> None:
         if school is not None and school != self.config["School"]:
@@ -48,7 +48,7 @@ class WizConfig(object):
         if modifiers is not None and modifiers != self.config["Modifiers"]:
             self.config["Modifiers"] = modifiers
 
-    def get_config(self) -> Tuple[str, str, int, int]:
+    def get_config(self) -> Tuple[str, str, str, int]:
         return (
             self.config["School"],
             self.config["Gender"],

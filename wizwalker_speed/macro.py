@@ -5,6 +5,7 @@ from wizwalker.memory.memory_objects import DynamicWindow
 from wizwalker.hotkey import Hotkey, Listener, ModifierKeys, HotkeyListener
 from typing import List
 import keyboard
+import time
 
 
 class ActionButton(Enum):
@@ -17,71 +18,105 @@ class ActionButton(Enum):
 
 
 class GenderButton(Enum):
-    GIRL = "GirlButton"
-    BOY = "BoyButton"
+    GIRL = "Girl"
+    BOY = "Boy"
+
+    def button_name(self) -> str:
+        return self.value + "Button"
 
 
 class SchoolButton(Enum):
-    STORM = "SelectStormButton"
-    MYTH = "SelectMythButton"
-    LIFE = "SelectLifeButton"
-    FIRE = "SelectFireButton"
-    ICE = "SelectIceButton"
-    BALANCE = "SelectBalanceButton"
-    DEATH = "SelectDeathButton"
+    STORM = "Storm"
+    MYTH = "Myth"
+    LIFE = "LifeButton"
+    FIRE = "Fire"
+    ICE = "Ice"
+    BALANCE = "Balance"
+    DEATH = "Death"
+
+    def button_name(self) -> str:
+        return "Select" + self.value + "Button"
 
 
 class Macro(object):
     def __init__(self, handler: ClientHandler) -> None:
         self.handler = handler
-        self.client = self.handler.get_new_clients()[0]
-        self.macro_listner = HotkeyListener()
-
-    def spawn_macro(self) -> None:
-        asyncio.run(self.run_macro())
+        while True:
+            try:
+                self.client = self.handler.get_new_clients()[0]
+                break
+            except IndexError as a:
+                print("Waiting for client to open")
+                time.sleep(5)
+                continue
+        self.macro_listener = HotkeyListener()
 
     async def run_macro(self):
         try:
-            await self.client.mouse_handler.activate_mouseless()
+            print("Activating Hooks")
             await self.client.hook_handler.activate_root_window_hook()
             await self.client.hook_handler.activate_render_context_hook()
-            self.macro_listner.start()
+            print("Starting listener")
+            self.macro_listener.start()
             while True:
                 await asyncio.sleep(1)
         finally:
             await self.handler.close()
 
-    async def execute_character_macro(self, school: SchoolButton, gender: GenderButton):
-        print("Executing macro")
+    async def execute_character_macro(self, school: str, gender: str):
+        print("Executing Macro")
         mouse_handler = self.client.mouse_handler
-        await mouse_handler.click_window_with_name(ActionButton.DELETE)
-        keyboard.write("abracadabra")
-        dtl: List[DynamicWindow] = await self.client.root_window.get_windows_with_name(
-            ActionButton.DELETE
-        )
-        await mouse_handler.click_window(dtl[1])
-        await asyncio.sleep(0.1)
-        await mouse_handler.click_window_with_name(ActionButton.NEW)
-        for _ in range(11):
-            await mouse_handler.click_window_with_name(ActionButton.NEXT)
+        try:
+            school_btn = SchoolButton(school)
+            gender_btn = GenderButton(gender)
+            await mouse_handler.activate_mouseless()
+            await mouse_handler.click_window_with_name(ActionButton.DELETE.value)
             await asyncio.sleep(0.1)
-        await mouse_handler.click_window_with_name(ActionButton.SKIP)
-        await mouse_handler.click_window_with_name(school)
-        await mouse_handler.click_window_with_name(ActionButton.OK)
-        await mouse_handler.click_window_with_name(ActionButton.NEXT)
-        girl: DynamicWindow = (
-            await self.client.root_window.get_windows_with_name(gender)
-        )[0]
-        girl_box = await girl.scale_to_client()
-        gx, gy = girl_box.center()
-        gy_len = int((girl_box.y2 - girl_box.y1) / 2)
-        await mouse_handler.click(gx, gy - gy_len)
-        next: DynamicWindow = (
-            await self.client.root_window.get_windows_with_name(ActionButton.NEXT)
-        )[0]
-        next_box = await next.scale_to_client()
-        nx, _ = next_box.center()
-        await mouse_handler.click(nx, gy - gy_len)
-        await mouse_handler.click_window_with_name(ActionButton.NEXT)
-        await asyncio.sleep(0.5)
-        await mouse_handler.click_window_with_name(ActionButton.DONE)
+            keyboard.write("abracadabra")
+            await asyncio.sleep(0.1)
+            dtl: List[
+                DynamicWindow
+            ] = await self.client.root_window.get_windows_with_name(ActionButton.DELETE.value)
+            await mouse_handler.click_window(dtl[1])
+            await asyncio.sleep(0.5)
+            await mouse_handler.click_window_with_name(ActionButton.NEW.value)
+            await asyncio.sleep(0.1)
+
+            try:
+                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+            except:
+                await mouse_handler.click_window_with_name(ActionButton.NEW.value)
+                await asyncio.sleep(0.1)
+                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+
+            for _ in range(10):
+                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+                await asyncio.sleep(0.1)
+
+            await mouse_handler.click_window_with_name(ActionButton.SKIP.value)
+            await mouse_handler.click_window_with_name(school_btn.button_name())
+            await mouse_handler.click_window_with_name(ActionButton.OK.value)
+            await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+            await asyncio.sleep(0.1)
+            girl: DynamicWindow = (
+                await self.client.root_window.get_windows_with_name(gender_btn.button_name())
+            )[0]
+            girl_box = await girl.scale_to_client()
+            gx, gy = girl_box.center()
+            gy_len = int((girl_box.y2 - girl_box.y1) / 2)
+            await mouse_handler.click(gx, gy - gy_len)
+            await asyncio.sleep(0.1)
+            next: DynamicWindow = (
+                await self.client.root_window.get_windows_with_name(ActionButton.NEXT.value)
+            )[0]
+            next_box = await next.scale_to_client()
+            nx, _ = next_box.center()
+            await mouse_handler.click(nx, gy - gy_len)
+            await asyncio.sleep(0.1)
+            await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+            await asyncio.sleep(0.5)
+            await mouse_handler.click_window_with_name(ActionButton.DONE.value)
+        except Exception as e:
+            print(e)
+        finally:
+            await mouse_handler.deactivate_mouseless()
