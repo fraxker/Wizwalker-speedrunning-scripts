@@ -4,11 +4,12 @@ from wizwalker import ModifierKeys, Keycode
 from typing import Tuple
 
 DEFAULT = {
-    "School" : "Balance",
-    "Gender" : "Girl",
-    "Key" : Keycode.R.value,
-    "Modifiers": ModifierKeys.CTRL.value
+    "School": "Balance",
+    "Gender": "Girl",
+    "Key": Keycode.R.value,
+    "Modifiers": ModifierKeys.CTRL.value,
 }
+
 
 class WizConfig(object):
     def __init__(self) -> None:
@@ -19,16 +20,22 @@ class WizConfig(object):
         if not self.path.exists():
             self.config = DEFAULT
             self.write()
-            
+
         else:
             with self.path.open() as f:
                 self.config = json.load(f)
-    
+
     def write(self) -> None:
         with self.path.open("w") as f:
             json.dump(self.config, f)
 
-    def set_config(self, school: str = None, gender: str = None, key: int = None, modifiers: int = None) -> None:
+    def set_config(
+        self,
+        school: str = None,
+        gender: str = None,
+        key: int = None,
+        modifiers: int = None,
+    ) -> None:
         if school is not None and school != self.config["School"]:
             self.config["School"] = school
 
@@ -42,4 +49,9 @@ class WizConfig(object):
             self.config["Modifiers"] = modifiers
 
     def get_config(self) -> Tuple[str, str, int, int]:
-        return (self.config["School"], self.config["Gender"], self.config["Key"], self.config["Modifiers"])
+        return (
+            self.config["School"],
+            self.config["Gender"],
+            self.config["Key"],
+            self.config["Modifiers"],
+        )
