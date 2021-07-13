@@ -32,7 +32,7 @@ Everything can be installed by cloning the repo and running
 `pip install .`
 
 ## Building
-`pyinstaller --one-file ./main.py
+`pyinstaller --onefile ./main.py`
 
 ## Future Plans
 * Stat Tracking
