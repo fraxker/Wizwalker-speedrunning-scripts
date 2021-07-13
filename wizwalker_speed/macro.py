@@ -1,11 +1,13 @@
 import asyncio
 from enum import Enum
-from wizwalker import ClientHandler, Client, Keycode
+from wizwalker import ClientHandler
 from wizwalker.memory.memory_objects import DynamicWindow
-from wizwalker.hotkey import Hotkey, Listener, ModifierKeys, HotkeyListener
+from wizwalker.hotkey import HotkeyListener
 from typing import List
-import keyboard
+import win32com.client
 import time
+
+from wizwalker.mouse_handler import MouseHandler
 
 
 class ActionButton(Enum):
@@ -25,6 +27,8 @@ class ActionButton(Enum):
     OK = "OKButton"
     # Done Button
     DONE = "DoneButton"
+    # Cancel Button
+    CANCEL = "BackButton"
 
 
 class GenderButton(Enum):
@@ -99,6 +103,8 @@ class Macro(object):
                 time.sleep(5)
                 continue
         self.macro_listener = HotkeyListener()
+        self.shell = win32com.client.Dispatch("WScript.Shell")
+        self.shell.AppActivate("WizardGraphicalClient")
 
     async def run_macro(self) -> None:
         """
@@ -129,59 +135,70 @@ class Macro(object):
             school_btn = SchoolButton(school)
             gender_btn = GenderButton(gender)
             await mouse_handler.activate_mouseless()
-            await mouse_handler.click_window_with_name(ActionButton.DELETE.value)
-            await asyncio.sleep(0.1)
-            keyboard.write("abracadabra")
-            await asyncio.sleep(0.1)
-            dtl: List[
-                DynamicWindow
-            ] = await self.client.root_window.get_windows_with_name(
-                ActionButton.DELETE.value
-            )
-            await mouse_handler.click_window(dtl[1])
-            await asyncio.sleep(0.5)
-            await mouse_handler.click_window_with_name(ActionButton.NEW.value)
-            await asyncio.sleep(0.1)
-
             try:
-                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
-            except:
                 await mouse_handler.click_window_with_name(ActionButton.NEW.value)
-                await asyncio.sleep(0.1)
-                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
-
-            for _ in range(10):
-                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
-                await asyncio.sleep(0.1)
-
-            await mouse_handler.click_window_with_name(ActionButton.SKIP.value)
-            await mouse_handler.click_window_with_name(school_btn.button_name())
-            await mouse_handler.click_window_with_name(ActionButton.OK.value)
-            await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
-            await asyncio.sleep(0.1)
-            girl: DynamicWindow = (
-                await self.client.root_window.get_windows_with_name(
-                    gender_btn.button_name()
-                )
-            )[0]
-            girl_box = await girl.scale_to_client()
-            gx, gy = girl_box.center()
-            gy_len = int((girl_box.y2 - girl_box.y1) / 2)
-            await mouse_handler.click(gx, gy - gy_len)
-            await asyncio.sleep(0.1)
-            next: DynamicWindow = (
-                await self.client.root_window.get_windows_with_name(
-                    ActionButton.NEXT.value
-                )
-            )[0]
-            next_box = await next.scale_to_client()
-            nx, _ = next_box.center()
-            await mouse_handler.click(nx, gy - gy_len)
-            await asyncio.sleep(0.1)
-            await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
-            await asyncio.sleep(0.5)
-            await mouse_handler.click_window_with_name(ActionButton.DONE.value)
+                await asyncio.sleep(0.25)
+                await mouse_handler.click_window_with_name(ActionButton.CANCEL.value)
+                await asyncio.sleep(0.25)
+            except:
+                await self.delete_charcter(mouse_handler)
+            finally:
+                await self.create_character(mouse_handler, school_btn, gender_btn)
         except Exception as e:
             print(e)
         finally:
             await mouse_handler.deactivate_mouseless()
+
+    async def create_character(
+        self,
+        mouse_handler: MouseHandler,
+        school_btn: SchoolButton,
+        gender_btn: GenderButton,
+    ):
+        await mouse_handler.click_window_with_name(ActionButton.NEW.value)
+        await asyncio.sleep(0.5)
+        while True:
+            try:
+                await mouse_handler.click_window_with_name(ActionButton.SKIP.value)
+                await asyncio.sleep(0.1)
+                break
+            except:
+                await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+                await asyncio.sleep(0.1)
+        await mouse_handler.click_window_with_name(school_btn.button_name())
+        await asyncio.sleep(0.1)
+        await mouse_handler.click_window_with_name(ActionButton.OK.value)
+        await asyncio.sleep(0.1)
+        await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+        await asyncio.sleep(0.1)
+        girl: DynamicWindow = (
+            await self.client.root_window.get_windows_with_name(
+                gender_btn.button_name()
+            )
+        )[0]
+        girl_box = await girl.scale_to_client()
+        gx, gy = girl_box.center()
+        gy_len = int((girl_box.y2 - girl_box.y1) / 2)
+        await mouse_handler.click(gx, gy - gy_len)
+        await asyncio.sleep(0.1)
+        next: DynamicWindow = (
+            await self.client.root_window.get_windows_with_name(ActionButton.NEXT.value)
+        )[0]
+        next_box = await next.scale_to_client()
+        nx, _ = next_box.center()
+        await mouse_handler.click(nx, gy - gy_len)
+        await asyncio.sleep(0.1)
+        await mouse_handler.click_window_with_name(ActionButton.NEXT.value)
+        await asyncio.sleep(0.5)
+        await mouse_handler.click_window_with_name(ActionButton.DONE.value)
+
+    async def delete_charcter(self, mouse_handler: MouseHandler):
+        await mouse_handler.click_window_with_name(ActionButton.DELETE.value)
+        await asyncio.sleep(0.1)
+        self.shell.SendKeys("abracadabra")
+        await asyncio.sleep(0.1)
+        dtl: List[DynamicWindow] = await self.client.root_window.get_windows_with_name(
+            ActionButton.DELETE.value
+        )
+        await mouse_handler.click_window(dtl[1])
+        await asyncio.sleep(0.5)

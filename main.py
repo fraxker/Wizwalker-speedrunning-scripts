@@ -3,7 +3,7 @@ import tkinter as tk
 import asyncio
 from wizwalker import ClientHandler, Keycode
 from wizwalker_speed.config import WizConfig
-from wizwalker_speed.macro import Macro, SchoolButton, GenderButton
+from wizwalker_speed.macro import Macro
 
 
 async def main():
